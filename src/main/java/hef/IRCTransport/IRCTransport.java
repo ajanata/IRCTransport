@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -22,6 +23,7 @@ import org.bukkit.event.Event.Priority;
 import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.bukkit.util.config.Configuration;
 
 /**
  * IRCTransport for Bukkit
@@ -58,6 +60,19 @@ public class IRCTransport extends JavaPlugin {
     private String nickPrefix = "";
     private String nickSuffix = "";
     private IRCTransportPlayerListener playerListener;
+    @SuppressWarnings("serial")
+    private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
+      {
+        put("server", "");
+        put("port", 6667);
+        put("password", "");
+        put("autojoin", "");
+        put("autojoinkey", "");
+        put("nickprefix", "");
+        put("nicksuffix", "");
+        put("verbose", false);
+      }
+    };
 
     private boolean verbose;
 
@@ -261,34 +276,8 @@ public class IRCTransport extends JavaPlugin {
         PluginManager pm = getServer().getPluginManager();
         PluginDescriptionFile pdfFile = this.getDescription();
 
-        // handle plugin settings.
-        FileInputStream spf;
-        Properties sp = new Properties();
-        try {
-            spf = new FileInputStream("server.properties");
-            sp.load(spf);
-            this.ircServer = sp.getProperty("irc.server", "");
-        } catch (FileNotFoundException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-        } catch (IOException e) {
-            log.log(Level.SEVERE, e.getMessage(), e);
-        }
-
-        // grab data from server.properties
-        this.ircServer = sp.getProperty("irc.server", "");
-        this.ircPort = Integer.parseInt(sp.getProperty("irc.port", "6667"));
-        this.ircPassword = sp.getProperty("irc.password", "");
-        this.autoJoin = sp.getProperty("irc.autojoin", "");
-        this.autoJoinKey = sp.getProperty("irc.autojoinkey", "");
-        this.nickPrefix = sp.getProperty("irc.nickprefix", "");
-        this.nickSuffix = sp.getProperty("irc.nicksuffix", "");
-        this.verbose = Boolean.parseBoolean(sp.getProperty("irc.verbose",
-                "false"));
-        // validate data
-        if (this.ircServer.equals("")) {
-            log.log(Level.SEVERE, pdfFile.getName()
-                    + ": set \"irc.server\" in server.properties");
-            return;
+        if (!readConfig()) {
+          return;
         }
 
         log.log(Level.INFO, pdfFile.getFullName() + " is enabled!");
@@ -309,6 +298,50 @@ public class IRCTransport extends JavaPlugin {
                 Priority.Normal, this);
         pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener,
                 Priority.Normal, this);
+    }
+    
+    /**
+     * Read plugin settings.
+     * @return Whether the settings were successfully and validly loaded.
+     */
+    private boolean readConfig() {
+        initConfig();
+        
+        Configuration config = this.getConfiguration();
+        this.ircServer = config.getString("server");
+        this.ircPort = config.getInt("port", 6667);
+        this.ircPassword = config.getString("password");
+        this.autoJoin = config.getString("autojoin");
+        this.autoJoinKey = config.getString("autojoinkey");
+        this.nickPrefix = config.getString("nickprefix");
+        this.nickSuffix = config.getString("nicksuffix");
+        this.verbose = config.getBoolean("verbose", false);
+
+        // validate data
+        if (this.ircServer.equals("")) {
+            String sep = System.getProperty("file.separator");
+            log.log(Level.SEVERE, this.getDescription().getName() +
+                    ": set \"server\" in \"plugins" + sep + "IRCTransport" + sep + "config.yml\"");
+            return false;
+        }
+        return true;
+    }
+    
+    /**
+     * Initialize config file with default values.
+     */
+    private void initConfig() {
+        Configuration config = this.getConfiguration();
+        boolean saveNeeded = false;
+        for (String k : configDefaults.keySet()) {
+            if (config.getProperty(k) == null) {
+                saveNeeded = true;
+                config.setProperty(k, configDefaults.get(k));
+            }
+        }
+        if (saveNeeded) {
+          config.save();
+        }
     }
 
     public boolean privateMessage(IrcAgent bot, String[] args) {
