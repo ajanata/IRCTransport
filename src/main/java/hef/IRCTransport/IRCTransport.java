@@ -25,6 +25,8 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.util.config.Configuration;
 
+import com.google.common.annotations.VisibleForTesting;
+
 /**
  * IRCTransport for Bukkit
  * 
@@ -63,18 +65,19 @@ public class IRCTransport extends JavaPlugin {
     private IRCTransportPlayerListener playerListener;
     @SuppressWarnings("serial")
     private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
-      {
-        put("server", "");
-        put("port", 6667);
-        put("password", "");
-        put("autojoin", "");
-        put("autojoinkey", "");
-        put("nickprefix", "");
-        put("nicksuffix", "");
-        put("webircpassword", "");
-        put("verbose", false);
-      }
+        {
+            put("server", "");
+            put("port", 6667);
+            put("password", "");
+            put("autojoin", "");
+            put("autojoinkey", "");
+            put("nickprefix", "");
+            put("nicksuffix", "");
+            put("webircpassword", "");
+            put("verbose", false);
+        }
     };
+    private static final int CONFIG_VERSION = 1;
 
     private boolean verbose;
 
@@ -153,7 +156,7 @@ public class IRCTransport extends JavaPlugin {
     public String getNickSuffix() {
         return nickSuffix;
     }
-    
+
     /**
      * @return The WEBIRC password to use to connect to the server.
      */
@@ -286,7 +289,7 @@ public class IRCTransport extends JavaPlugin {
         PluginDescriptionFile pdfFile = this.getDescription();
 
         if (!readConfig()) {
-          return;
+            return;
         }
 
         log.log(Level.INFO, pdfFile.getFullName() + " is enabled!");
@@ -308,14 +311,14 @@ public class IRCTransport extends JavaPlugin {
         pm.registerEvent(Event.Type.PLAYER_QUIT, playerListener,
                 Priority.Normal, this);
     }
-    
+
     /**
      * Read plugin settings.
      * @return Whether the settings were successfully and validly loaded.
      */
     private boolean readConfig() {
         initConfig();
-        
+
         Configuration config = this.getConfiguration();
         this.ircServer = config.getString("server");
         this.ircPort = config.getInt("port", 6667);
@@ -330,17 +333,19 @@ public class IRCTransport extends JavaPlugin {
         // validate data
         if (this.ircServer.equals("")) {
             String sep = System.getProperty("file.separator");
-            log.log(Level.SEVERE, this.getDescription().getName() +
-                    ": set \"server\" in \"plugins" + sep + "IRCTransport" + sep + "config.yml\"");
+            log.log(Level.SEVERE, this.getDescription().getName()
+                    + ": set \"server\" in \"plugins" + sep + "IRCTransport"
+                    + sep + "config.yml\"");
             return false;
         }
         return true;
     }
-    
+
     /**
      * Initialize config file with default values.
      */
     private void initConfig() {
+        maybeUpdateConfig();
         Configuration config = this.getConfiguration();
         boolean saveNeeded = false;
         for (String k : configDefaults.keySet()) {
@@ -350,7 +355,79 @@ public class IRCTransport extends JavaPlugin {
             }
         }
         if (saveNeeded) {
-          config.save();
+            config.save();
+        }
+    }
+
+    /**
+     * Check config.yml version, and update config settings if required.
+     */
+    void maybeUpdateConfig() {
+        Configuration config = this.getConfiguration();
+        if (config.getInt("configversion", 0) == 0) {
+            log.log(Level.INFO, this.getDescription().getName() +
+                    ": Updating config file automatically.");
+            // Update from server.properties to config.yml.
+            FileInputStream spf;
+            Properties sp = new Properties();
+            try {
+                spf = new FileInputStream("server.properties");
+                sp.load(spf);
+                String server = sp.getProperty("irc.server", "");
+                if (!server.equals("")) {
+                    config.setProperty("server", server);
+                }
+                spf.close();
+            } catch (IOException e) {
+                config.setProperty("configversion", CONFIG_VERSION);
+                config.save();
+                return;
+            }
+
+            // grab data from server.properties
+            try {
+                int port = Integer.parseInt(sp.getProperty("irc.port", "-1"));
+                if (port > 0) {
+                    config.setProperty("port", port);
+                }
+            } catch (NumberFormatException nfe) {
+                // nothing
+            }
+
+            String password = sp.getProperty("irc.password", "");
+            if (!password.equals("")) {
+                config.setProperty("password", password);
+            }
+
+            String autojoin = sp.getProperty("irc.autojoin", "");
+            if (!autojoin.equals("")) {
+                config.setProperty("autojoin", autojoin);
+            }
+
+            String autojoinkey = sp.getProperty("irc.autojoinkey", "");
+            if (!autojoinkey.equals("")) {
+                config.setProperty("autojoinkey", autojoinkey);
+            }
+
+            String nickprefix = sp.getProperty("irc.nickprefix", "");
+            if (!nickprefix.equals("")) {
+                config.setProperty("nickprefix", nickprefix);
+            }
+
+            String nicksuffix = sp.getProperty("irc.nicksuffix", "");
+            if (!nicksuffix.equals("")) {
+                config.setProperty("nicksuffix", nicksuffix);
+            }
+
+            String verbose = sp.getProperty("irc.verbose");
+            if (verbose != null) {
+                config.setProperty("verbose", Boolean.parseBoolean(verbose));
+            }
+
+            config.setProperty("configversion", CONFIG_VERSION);
+            config.setHeader(
+                    "# Configuration for IRCTransport. Do not change the value of configversion");
+            config.save();
         }
     }
 

@@ -58,7 +58,6 @@ public final class Connect implements Runnable {
                         agent.connect(plugin.getIrcServer(), plugin.getIrcPort(),
                                 plugin.getIrcPassword());
                     } else {
-                      System.err.println("Have webirc password");
                         String webhost = agent.getPlayer().getAddress().getHostName();
                         String webip = agent.getPlayer().getAddress().getAddress().toString();
                         // The part before the / is a hostname if it is already known; we really

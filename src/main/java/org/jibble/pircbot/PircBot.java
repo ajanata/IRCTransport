@@ -192,7 +192,6 @@ public abstract class PircBot implements ReplyConstants {
         // Use WEBIRC
         if (webpass != null && !webpass.equals("") && webhost != null && !webhost.equals("")
                 && webip != null && !webip.equals("")) {
-          System.err.println("WEBIRC " + webpass + " cgiirc " + webhost + " " + webip);
             OutputThread.sendRawLine(this, bwriter, "WEBIRC " + webpass + " cgiirc " + webhost + " " + webip);
         }
         
