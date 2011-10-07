@@ -59,6 +59,7 @@ public class IRCTransport extends JavaPlugin {
     private String ircServer = "";
     private String nickPrefix = "";
     private String nickSuffix = "";
+    private String webIrcPassword = "";
     private IRCTransportPlayerListener playerListener;
     @SuppressWarnings("serial")
     private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
@@ -70,6 +71,7 @@ public class IRCTransport extends JavaPlugin {
         put("autojoinkey", "");
         put("nickprefix", "");
         put("nicksuffix", "");
+        put("webircpassword", "");
         put("verbose", false);
       }
     };
@@ -150,6 +152,13 @@ public class IRCTransport extends JavaPlugin {
      */
     public String getNickSuffix() {
         return nickSuffix;
+    }
+    
+    /**
+     * @return The WEBIRC password to use to connect to the server.
+     */
+    public String getWebIrcPassword() {
+        return webIrcPassword;
     }
 
     public void initDatabase() {
@@ -315,6 +324,7 @@ public class IRCTransport extends JavaPlugin {
         this.autoJoinKey = config.getString("autojoinkey");
         this.nickPrefix = config.getString("nickprefix");
         this.nickSuffix = config.getString("nicksuffix");
+        this.webIrcPassword = config.getString("webircpassword");
         this.verbose = config.getBoolean("verbose", false);
 
         // validate data

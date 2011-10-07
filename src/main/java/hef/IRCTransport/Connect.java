@@ -53,9 +53,21 @@ public final class Connect implements Runnable {
             try {
                 // If we never set the server i.e. havn't connected yet
                 if (agent.getServer() == null) {
-                    agent.connect(agent.getPlugin().getIrcServer(), agent
-                            .getPlugin().getIrcPort(), agent.getPlugin()
-                            .getIrcPassword());
+                    IRCTransport plugin = agent.getPlugin();
+                    if (plugin.getWebIrcPassword().equals("")) {
+                        agent.connect(plugin.getIrcServer(), plugin.getIrcPort(),
+                                plugin.getIrcPassword());
+                    } else {
+                      System.err.println("Have webirc password");
+                        String webhost = agent.getPlayer().getAddress().getHostName();
+                        String webip = agent.getPlayer().getAddress().getAddress().toString();
+                        // The part before the / is a hostname if it is already known; we really
+                        // want it so we look it up manually and get rid of it here.
+                        webip = webip.split("/")[1];
+                        agent.connect(plugin.getIrcServer(), plugin.getIrcPort(),
+                                plugin.getIrcPassword(), plugin.getWebIrcPassword(), webhost,
+                                webip);
+                    }
                 } else {
                     // reconnect should recycle settings the user already has
                     agent.reconnect();
