@@ -4,6 +4,11 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -62,6 +67,11 @@ public class IRCTransport extends JavaPlugin {
     private String nickPrefix = "";
     private String nickSuffix = "";
     private String webIrcPassword = "";
+    private String dbServer = "";
+    private String dbUser = "";
+    private String dbPassword = "";
+    private String dbName = "";
+    private Configuration config = null;
     private IRCTransportPlayerListener playerListener;
     @SuppressWarnings("serial")
     private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
@@ -75,6 +85,11 @@ public class IRCTransport extends JavaPlugin {
             put("nicksuffix", "");
             put("webircpassword", "");
             put("verbose", false);
+            put("SocialGamer.dbserver", "");
+            put("SocialGamer.dbuser", "");
+            put("SocialGamer.dbpassword", "");
+            put("SocialGamer.dbname", "");
+            put("SocialGamer.ServerPrefixes.test", "Test");
         }
     };
     private static final int CONFIG_VERSION = 1;
@@ -162,6 +177,23 @@ public class IRCTransport extends JavaPlugin {
      */
     public String getWebIrcPassword() {
         return webIrcPassword;
+    }
+
+    /**
+     * Make a connection to the MySQL server to verify account access.
+     * @return
+     * @throws SQLException
+     */
+    public Connection makeSqlConn() throws SQLException {
+        return DriverManager.getConnection("jdbc:mysql://" + this.dbServer + "/" + this.dbName +
+                "?user=" + this.dbUser + "&password=" + this.dbPassword);
+    }
+
+    /**
+     * @return Configuration file wrapper.
+     */
+    public Configuration getConfig() {
+        return this.config;
     }
 
     public void initDatabase() {
@@ -292,6 +324,30 @@ public class IRCTransport extends JavaPlugin {
             return;
         }
 
+        // Initialize and test MySQL.
+        try {
+            Class.forName("com.mysql.jdbc.Driver").newInstance();
+            Connection sqlConn = makeSqlConn();
+            Statement s = sqlConn.createStatement();
+            ResultSet rs = s.executeQuery(
+                    "SELECT COUNT(*) FROM user_options WHERE minecraft_username IS NOT NULL");
+
+            rs.next();
+            int mcUsers = rs.getInt(1);
+            rs.close();
+            s.close();
+            sqlConn.close();
+            log.log(Level.INFO, pdfFile.getName() + ": MySQL test pass. " + mcUsers +
+                    " users have a Minecraft username.");
+        } catch (Exception e) {
+            log.log(Level.SEVERE, pdfFile.getName() + ": MySQL test FAIL. " +
+                    e.getClass().getName() + " " + e.getMessage());
+            e.printStackTrace();
+            log.log(Level.SEVERE, pdfFile.getName() +
+                    ": [Disabled] Fix above MySQL error and try again.");
+            return;
+        }
+
         log.log(Level.INFO, pdfFile.getFullName() + " is enabled!");
 
         initDatabase();
@@ -319,7 +375,7 @@ public class IRCTransport extends JavaPlugin {
     private boolean readConfig() {
         initConfig();
 
-        Configuration config = this.getConfiguration();
+        this.config = this.getConfiguration();
         this.ircServer = config.getString("server");
         this.ircPort = config.getInt("port", 6667);
         this.ircPassword = config.getString("password");
@@ -329,6 +385,10 @@ public class IRCTransport extends JavaPlugin {
         this.nickSuffix = config.getString("nicksuffix");
         this.webIrcPassword = config.getString("webircpassword");
         this.verbose = config.getBoolean("verbose", false);
+        this.dbServer = config.getString("SocialGamer.dbserver");
+        this.dbUser = config.getString("SocialGamer.dbuser");
+        this.dbPassword = config.getString("SocialGamer.dbpassword");
+        this.dbName = config.getString("SocialGamer.dbname");
 
         // validate data
         if (this.ircServer.equals("")) {

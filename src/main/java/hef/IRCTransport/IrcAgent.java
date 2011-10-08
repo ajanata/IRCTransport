@@ -1,5 +1,6 @@
 package hef.IRCTransport;
 
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -7,6 +8,7 @@ import java.util.regex.Pattern;
 
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
+import org.bukkit.util.config.Configuration;
 import org.jibble.pircbot.PircBot;
 import org.jibble.pircbot.User;
 
@@ -87,8 +89,7 @@ public final class IrcAgent extends PircBot {
     @Override
     public void onAction(String sender, String login, String hostname,
             String target, String action) {
-        getPlayer().sendMessage(
-                String.format("[%s] * %s %s", target, sender, action));
+        getPlayer().sendMessage(formatMessage(sender, action, true));
     }
 
     @Override
@@ -126,13 +127,44 @@ public final class IrcAgent extends PircBot {
                         recipientNick, kickerNick, reason));
     }
 
+    /**
+     * Formats a message string based on originating server.
+     * @param sender The IRC nick which sent the message.
+     * @param message The message which was sent.
+     * @param isAction Whether this message is an action.
+     * @return Formatted string to display to the Minecraft player.
+     */
+    private String formatMessage(String sender, String message, boolean isAction) {
+        // Check for SocialGamer server prefixes in the nick.
+        // TODO(ajanata): See about user nick prefixes. I really don't want to pull in Permissions
+        // just for this...
+        String server = "IRC";
+        Configuration config = plugin.getConfig();
+        List<String> keys = config.getKeys("SocialGamer.ServerPrefixes");
+        for (String key : keys) {
+            if (sender.startsWith(key + "_")) {
+                server = config.getString("SocialGamer.ServerPrefixes." + key);
+                sender = sender.substring(key.length() + 1);
+            }
+        }
+        String out;
+        if (isAction) {
+            out = String.format("[%s%s%s] %s * %s %s",
+                    ChatColor.AQUA, server, ChatColor.WHITE, ChatColor.DARK_PURPLE,
+                    sender, ColorMap.fromIrc(message));
+        } else {
+            out = String.format("[%s%s%s] <%s> %s",
+                    ChatColor.AQUA, server, ChatColor.WHITE, sender, ColorMap.fromIrc(message));
+        }
+        return out;
+    }
+
     @Override
     public void onMessage(String channel, String sender, String login,
             String hostname, String message) {
         // TODO: replace channel names with numbers
-        getPlayer().sendMessage(
-                String.format("[%s] %s: %s", channel, sender,
-                        ColorMap.fromIrc(message)));
+        // TODO(ajanata): Do something about other channels?
+        getPlayer().sendMessage(formatMessage(sender, message, false));
     }
 
     @Override
@@ -228,20 +260,27 @@ public final class IrcAgent extends PircBot {
         plugin.getDatabase().save(getSettings());
     }
 
+    /**
+     * Used for outgoing actions.
+     * @param action
+     */
     public void sendAction(String action) {
-        sendAction(activeChannel, action);
-        getPlayer().sendMessage(
-                String.format("[%s] * %s %s", activeChannel, getPlayer()
-                        .getDisplayName(), action));
+        if (isConnected()) {
+            // TODO: check ativeChannel for NULL, then just pick a random channel.
+            sendAction(activeChannel, action);
+            getPlayer().sendMessage(formatMessage(getPlayer().getDisplayName(), action, true));
+        }
     }
 
+    /**
+     * Used for outgoing messages.
+     * @param message
+     */
     public void sendMessage(String message) {
-        // TODO: check ativeChannel for NULL, then just pick a random channel.
-        sendMessage(activeChannel, message);
         if (isConnected()) {
-            String msg = String.format("[%s] %s: %s", activeChannel,
-                    getPlayer().getDisplayName(), message);
-            getPlayer().sendMessage(msg);
+            // TODO: check ativeChannel for NULL, then just pick a random channel.
+            sendMessage(activeChannel, message);
+            getPlayer().sendMessage(formatMessage(getPlayer().getDisplayName(), message, false));
         }
     }
 
