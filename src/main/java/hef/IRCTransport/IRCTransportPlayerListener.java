@@ -67,7 +67,12 @@ import org.bukkit.event.player.PlayerQuitEvent;
     @Override
     public void onPlayerQuit(final PlayerQuitEvent event) {
         Player player = event.getPlayer();
-        this.bots.get(player).shutdown();
-        this.bots.remove(player);
+        if (player == null) {
+            return;
+        }
+        if (this.bots.containsKey(player)) {
+            this.bots.get(player).shutdown();
+            this.bots.remove(player);
+        }
     }
 }
