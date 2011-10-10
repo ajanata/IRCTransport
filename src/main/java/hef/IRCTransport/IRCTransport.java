@@ -73,6 +73,7 @@ public class IRCTransport extends JavaPlugin {
     private String dbName = "";
     private Configuration config = null;
     private IRCTransportPlayerListener playerListener;
+    private ServerBot serverBot;
     @SuppressWarnings("serial")
     private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
         {
@@ -85,6 +86,7 @@ public class IRCTransport extends JavaPlugin {
             put("nicksuffix", "");
             put("webircpassword", "");
             put("verbose", false);
+            put("serverbotname", "");
             put("SocialGamer.dbserver", "");
             put("SocialGamer.dbuser", "");
             put("SocialGamer.dbpassword", "");
@@ -306,8 +308,14 @@ public class IRCTransport extends JavaPlugin {
         // disconnect all agents
         for (Entry<Player, IrcAgent> entry : bots.entrySet()) {
             entry.getValue().shutdown();
+            entry.getValue().dispose();
         }
         bots.clear();
+
+        if (serverBot != null) {
+            serverBot.shutdown();
+            serverBot.dispose();
+        }
 
         log.log(Level.INFO, this.getDescription().getFullName()
                 + " is disabled");
@@ -353,6 +361,11 @@ public class IRCTransport extends JavaPlugin {
         initDatabase();
 
         // Event Registration
+
+        String serverBotName = config.getProperty("serverbotname").toString();
+        if (!serverBotName.equals("")) {
+            serverBot = new ServerBot(this, serverBotName);
+        }
 
         // establish list of players
         Player[] players = getServer().getOnlinePlayers();

@@ -72,6 +72,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
         }
         if (this.bots.containsKey(player)) {
             this.bots.get(player).shutdown();
+            this.bots.get(player).dispose();
             this.bots.remove(player);
         }
     }

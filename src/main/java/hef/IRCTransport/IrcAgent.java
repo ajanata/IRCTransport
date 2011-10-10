@@ -45,7 +45,6 @@ public final class IrcAgent extends PircBot {
                     player.getName(), getSettings().getIrcNick()));
         }
         setNick(getSettings().getIrcNick());
-        player.setDisplayName(getSettings().getIrcNick());
         new Connect(this).run();
     }
 
