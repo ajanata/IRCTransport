@@ -66,7 +66,8 @@ class ServerBot extends PircBot {
 
     private String getMemString() {
         Runtime runtime = Runtime.getRuntime();
-        return String.format("Free/total/max: %s/%s/%s",
+        return String.format("Used/Free/total/max: %s/%s/%s/%s",
+                (runtime.totalMemory() - runtime.freeMemory()) / 1024 / 1024,
                 runtime.freeMemory() / 1024 / 1024, runtime.totalMemory() / 1024 / 1024,
                 runtime.maxMemory() / 1024 / 1024);
     }
