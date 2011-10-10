@@ -136,8 +136,6 @@ public final class IrcAgent extends PircBot {
      */
     private String formatMessage(String sender, String message, boolean isAction) {
         // Check for SocialGamer server prefixes in the nick.
-        // TODO(ajanata): See about user nick prefixes. I really don't want to pull in Permissions
-        // just for this...
         String server = "IRC";
         Configuration config = plugin.getConfig();
         List<String> keys = config.getKeys("SocialGamer.ServerPrefixes");
@@ -147,16 +145,26 @@ public final class IrcAgent extends PircBot {
                 sender = sender.substring(key.length() + 1);
             }
         }
-        String out;
-        if (isAction) {
-            out = String.format("[%s%s%s] %s * %s %s",
-                    ChatColor.AQUA, server, ChatColor.WHITE, ChatColor.DARK_PURPLE,
-                    sender, ColorMap.fromIrc(message));
-        } else {
-            out = String.format("[%s%s%s] <%s> %s",
-                    ChatColor.AQUA, server, ChatColor.WHITE, sender, ColorMap.fromIrc(message));
+        String prefix = " ";
+        Player p = player.getServer().getPlayer(sender);
+        if (p != null) {
+            if (p.hasPermission("irctransport.prefix.admin")) {
+                prefix = "&";
+            } else if (p.hasPermission("irctransport.prefix.op")) {
+                prefix = "@";
+            } else if (p.hasPermission("irctransport.prefix.voice")) {
+                prefix = "+";
+            }
         }
-        return out;
+        if (isAction) {
+            return String.format("[%s%s%s] %s * %s%s %s",
+                    ChatColor.AQUA, server, ChatColor.WHITE, ChatColor.DARK_PURPLE,
+                    (prefix.equals(" ") ? "" : prefix), sender, ColorMap.fromIrc(message));
+        } else {
+            return String.format("[%s%s%s] <%s%s> %s",
+                    ChatColor.AQUA, server, ChatColor.WHITE, prefix, sender,
+                    ColorMap.fromIrc(message));
+        }
     }
 
     @Override

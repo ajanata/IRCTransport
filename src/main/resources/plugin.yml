@@ -53,3 +53,23 @@ commands:
            /<command> [topic]
            /<command>
            /<command> Our hearts are extended to the 17 victims of the recent internet fraud
+permissions:
+    irctransport.*:
+        description: Permissions for IRCTransport
+        children:
+            irctransport.prefix: true
+    irctransport.prefix.*:
+        description: 'Designate players that should have special characters prefixed to their name (admins, moderators, etc.).'
+        children:
+            irctransport.prefix.admin: true
+            irctransport.prefix.op: false
+            irctransport.prefix.voice: false
+    irctransport.prefix.admin:
+        description: 'Give the player an & prefix to their nick in chat.'
+        default: op
+    irctransport.prefix.op:
+        description: 'Give the player an @ prefix to their nick in chat.'
+        default: false
+    irctransport.prefix.voice:
+        description: 'Give the player a + prefix to their name in chat.'
+        default: false
