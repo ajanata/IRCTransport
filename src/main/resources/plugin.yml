@@ -65,7 +65,7 @@ permissions:
             irctransport.prefix.op: false
             irctransport.prefix.voice: false
     irctransport.prefix.admin:
-        description: 'Give the player an & prefix to their nick in chat.'
+        description: 'Give the player a ~ prefix to their nick in chat.'
         default: op
     irctransport.prefix.op:
         description: 'Give the player an @ prefix to their nick in chat.'

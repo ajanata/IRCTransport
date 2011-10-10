@@ -45,6 +45,7 @@ public final class IrcAgent extends PircBot {
                     player.getName(), getSettings().getIrcNick()));
         }
         setNick(getSettings().getIrcNick());
+        player.setDisplayName(getSettings().getIrcNick());
         new Connect(this).run();
     }
 
@@ -149,7 +150,7 @@ public final class IrcAgent extends PircBot {
         Player p = player.getServer().getPlayer(sender);
         if (p != null) {
             if (p.hasPermission("irctransport.prefix.admin")) {
-                prefix = "&";
+                prefix = "~";
             } else if (p.hasPermission("irctransport.prefix.op")) {
                 prefix = "@";
             } else if (p.hasPermission("irctransport.prefix.voice")) {
