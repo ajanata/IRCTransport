@@ -59,10 +59,7 @@ public final class Connect implements Runnable {
                                 plugin.getIrcPassword());
                     } else {
                         String webhost = agent.getPlayer().getAddress().getHostName();
-                        String webip = agent.getPlayer().getAddress().getAddress().toString();
-                        // The part before the / is a hostname if it is already known; we really
-                        // want it so we look it up manually and get rid of it here.
-                        webip = webip.split("/")[1];
+                        String webip = agent.getPlayer().getAddress().getAddress().getHostAddress();
                         agent.connect(plugin.getIrcServer(), plugin.getIrcPort(),
                                 plugin.getIrcPassword(), plugin.getWebIrcPassword(), webhost,
                                 webip);
