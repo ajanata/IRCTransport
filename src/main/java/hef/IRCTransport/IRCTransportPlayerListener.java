@@ -42,8 +42,8 @@ import org.bukkit.event.player.PlayerQuitEvent;
         Player player = event.getPlayer();
         try {
             Connection conn = plugin.makeSqlConn();
-            PreparedStatement stmt = conn.prepareStatement("SELECT uo.user, u.enabled FROM " +
-                    "user_options AS uo JOIN users AS u ON u.id = uo.user WHERE " +
+            PreparedStatement stmt = conn.prepareStatement("SELECT uo.user, u.enabled, u.username" +
+                    " FROM user_options AS uo JOIN users AS u ON u.id = uo.user WHERE " +
                     "uo.minecraft_username = ?");
             stmt.setString(1, player.getName());
             ResultSet rs = stmt.executeQuery();
@@ -54,7 +54,14 @@ import org.bukkit.event.player.PlayerQuitEvent;
                 conn.close();
                 return;
             }
+            String username = rs.getString(3);
             rs.close();
+            stmt.close();
+
+            stmt = conn.prepareStatement("INSERT INTO authcookies (cookie, time, source) VALUES " +
+                    "(MD5(CONCAT(?, UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), 'minecraft')");
+            stmt.setString(1, username + player.getAddress().getAddress().toString().split("/")[1]);
+            stmt.execute();
             stmt.close();
             conn.close();
         } catch (Exception e) {
