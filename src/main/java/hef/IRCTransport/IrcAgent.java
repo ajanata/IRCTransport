@@ -1,6 +1,8 @@
 package hef.IRCTransport;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -23,6 +25,7 @@ public final class IrcAgent extends PircBot {
     private AgentSettings settings;
     // flag to indicate we should not reconnect
     private boolean shuttingDown;
+    private Map<String, String> topics = new HashMap<String, String>(1);
 
     public IrcAgent(IRCTransport instance, Player player) {
         this.plugin = instance;
@@ -83,7 +86,17 @@ public final class IrcAgent extends PircBot {
     }
 
     protected void names(String channel) {
-        sendRawLine("NAMES " + channel);
+        User[] users = this.getUsers(channel);
+        processUserList(channel, users);
+    }
+
+    private void processUserList(String channel, User[] users) {
+        String usersString = "";
+        for (User user : users) {
+            usersString += user.toString() + " ";
+        }
+        getPlayer().sendMessage(
+                String.format("%s members: %s", channel, usersString));
     }
 
     @Override
@@ -242,12 +255,14 @@ public final class IrcAgent extends PircBot {
     @Override
     protected void onTopic(String channel, String topic, String setBy,
             long date, boolean changed) {
+        if (topics.containsKey(channel)) topics.remove(channel);
+        topics.put(channel, topic);
         if (changed) {
             getPlayer().sendMessage(
                     ChatColor.YELLOW
                             + String.format("[%s] Topic changed: %s", channel,
                                     topic));
-        } else {
+        } else if (plugin.getShowTopic()) {
             getPlayer().sendMessage(
                     ChatColor.YELLOW
                             + String.format("[%s] Topic: %s", channel, topic));
@@ -256,12 +271,9 @@ public final class IrcAgent extends PircBot {
 
     @Override
     protected void onUserList(String channel, User[] users) {
-        String usersString = "";
-        for (User user : users) {
-            usersString += user.toString() + " ";
+        if (plugin.getShowNames()) {
+            processUserList(channel, users);
         }
-        getPlayer().sendMessage(
-                String.format("%s members: %s", channel, usersString));
     }
 
     protected void saveSettings() {
@@ -327,6 +339,9 @@ public final class IrcAgent extends PircBot {
     }
 
     protected void topic() {
-        sendRawLine(String.format("TOPIC %s", activeChannel));
+        getPlayer().sendMessage(
+                ChatColor.YELLOW
+                        + String.format("[%s] Topic: %s", activeChannel,
+                                topics.get(activeChannel)));
     }
 }

@@ -72,6 +72,8 @@ public class IRCTransport extends JavaPlugin {
     private String dbPassword = "";
     private String dbName = "";
     private Configuration config = null;
+    private boolean showTopic;
+    private boolean showNames;
     private IRCTransportPlayerListener playerListener;
     private ServerBot serverBot;
     @SuppressWarnings("serial")
@@ -92,6 +94,8 @@ public class IRCTransport extends JavaPlugin {
             put("SocialGamer.dbpassword", "");
             put("SocialGamer.dbname", "");
             put("SocialGamer.ServerPrefixes.test", "Test");
+            put("showtopic", true);
+            put("shownames", true);
         }
     };
     private static final int CONFIG_VERSION = 1;
@@ -196,6 +200,20 @@ public class IRCTransport extends JavaPlugin {
      */
     public Configuration getConfig() {
         return this.config;
+    }
+
+    /**
+     * @return Whether to show the /topic when joining a channel.
+     */
+    public boolean getShowTopic() {
+        return showTopic;
+    }
+
+    /**
+     * @return Whether to show the /names list when joining a channel.
+     */
+    public boolean getShowNames() {
+        return showNames;
     }
 
     public void initDatabase() {
@@ -402,6 +420,8 @@ public class IRCTransport extends JavaPlugin {
         this.dbUser = config.getString("SocialGamer.dbuser");
         this.dbPassword = config.getString("SocialGamer.dbpassword");
         this.dbName = config.getString("SocialGamer.dbname");
+        this.showTopic = config.getBoolean("showtopic", true);
+        this.showNames = config.getBoolean("shownames", true);
 
         // validate data
         if (this.ircServer.equals("")) {
