@@ -60,7 +60,7 @@ import org.bukkit.event.player.PlayerQuitEvent;
 
             stmt = conn.prepareStatement("INSERT INTO authcookies (cookie, time, source) VALUES " +
                     "(MD5(CONCAT(?, UNIX_TIMESTAMP())), UNIX_TIMESTAMP(), 'minecraft')");
-            stmt.setString(1, username + player.getAddress().getAddress().toString().split("/")[1]);
+            stmt.setString(1, username + player.getAddress().getAddress().getHostAddress());
             stmt.execute();
             stmt.close();
             conn.close();
