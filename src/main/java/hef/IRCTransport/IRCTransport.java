@@ -62,6 +62,8 @@ public class IRCTransport extends JavaPlugin {
     private String nickPrefix = "";
     private String nickSuffix = "";
     private String webIrcPassword = "";
+    private boolean showTopic;
+    private boolean showNames;
     private IRCTransportPlayerListener playerListener;
     @SuppressWarnings("serial")
     private static final Map<String, Object> configDefaults = new HashMap<String, Object>() {
@@ -75,6 +77,8 @@ public class IRCTransport extends JavaPlugin {
             put("nicksuffix", "");
             put("webircpassword", "");
             put("verbose", false);
+            put("showtopic", true);
+            put("shownames", true);
         }
     };
     private static final int CONFIG_VERSION = 1;
@@ -162,6 +166,20 @@ public class IRCTransport extends JavaPlugin {
      */
     public String getWebIrcPassword() {
         return webIrcPassword;
+    }
+
+    /**
+     * @return Whether to show the /topic when joining a channel.
+     */
+    public boolean getShowTopic() {
+        return showTopic;
+    }
+
+    /**
+     * @return Whether to show the /names list when joining a channel.
+     */
+    public boolean getShowNames() {
+        return showNames;
     }
 
     public void initDatabase() {
@@ -329,6 +347,8 @@ public class IRCTransport extends JavaPlugin {
         this.nickSuffix = config.getString("nicksuffix");
         this.webIrcPassword = config.getString("webircpassword");
         this.verbose = config.getBoolean("verbose", false);
+        this.showTopic = config.getBoolean("showtopic", true);
+        this.showNames = config.getBoolean("shownames", true);
 
         // validate data
         if (this.ircServer.equals("")) {
