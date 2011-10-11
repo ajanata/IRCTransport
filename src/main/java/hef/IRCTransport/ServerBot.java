@@ -14,7 +14,8 @@ class ServerBot extends PircBot {
         plugin = instance;
 
         setLogin("minecraft");
-        this.setName(nick);
+        setName(nick);
+        setAutoNickChange(true);
         try {
             connect(plugin.getIrcServer(), plugin.getIrcPort(), plugin.getIrcPassword());
         } catch (Exception e) {
